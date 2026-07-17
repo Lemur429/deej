@@ -1,7 +1,7 @@
 package deej
 
 import (
-	"github.com/getlantern/systray"
+	"github.com/energye/systray"
 
 	"github.com/omriharel/deej/pkg/deej/icon"
 	"github.com/omriharel/deej/pkg/deej/util"
@@ -32,40 +32,31 @@ func (d *Deej) initializeTray(onDone func()) {
 		systray.AddSeparator()
 		quit := systray.AddMenuItem("Quit", "Stop deej and quit")
 
-		// wait on things to happen
-		go func() {
-			for {
-				select {
+		quit.Click(func() {
+			logger.Info("Quit menu item clicked, stopping")
+			d.signalStop()
+		})
 
-				// quit
-				case <-quit.ClickedCh:
-					logger.Info("Quit menu item clicked, stopping")
+		editConfig.Click(func() {
+			logger.Info("Edit config menu item clicked, opening config for editing")
 
-					d.signalStop()
-
-				// edit config
-				case <-editConfig.ClickedCh:
-					logger.Info("Edit config menu item clicked, opening config for editing")
-
-					editor := "notepad.exe"
-					if util.Linux() {
-						editor = "gedit"
-					}
-
-					if err := util.OpenExternal(logger, editor, userConfigFilepath); err != nil {
-						logger.Warnw("Failed to open config file for editing", "error", err)
-					}
-
-				// refresh sessions
-				case <-refreshSessions.ClickedCh:
-					logger.Info("Refresh sessions menu item clicked, triggering session map refresh")
-
-					// performance: the reason that forcing a refresh here is okay is that users can't spam the
-					// right-click -> select-this-option sequence at a rate that's meaningful to performance
-					d.sessions.refreshSessions(true)
-				}
+			editor := "notepad.exe"
+			if util.Linux() {
+				editor = "gedit"
 			}
-		}()
+
+			if err := util.OpenExternal(logger, editor, userConfigFilepath); err != nil {
+				logger.Warnw("Failed to open config file for editing", "error", err)
+			}
+		})
+
+		refreshSessions.Click(func() {
+			logger.Info("Refresh sessions menu item clicked, triggering session map refresh")
+
+			// performance: the reason that forcing a refresh here is okay is that users can't spam the
+			// right-click -> select-this-option sequence at a rate that's meaningful to performance
+			d.sessions.refreshSessions(true)
+		})
 
 		// actually start the main runtime
 		onDone()
